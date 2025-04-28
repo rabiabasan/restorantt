@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restoran QR Menü</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            background:rgb(248, 216, 210) ;
+            
+        }
+    
+        .sepet-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+    
+        .sepet-link {
+            position: relative;
+            font-size: 24px;
+            color: #333;
+            text-decoration: none;
+        }
+    
+        .sepet-sayisi {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            background: red;
+            color: white;
+            font-size: 12px;
+            padding: 2px 6px;
+            border-radius: 50%;
+        }
+    
+        nav ul {
+            list-style: none;
+            display: flex;
+            gap: 15px;
+            padding: 0;
+            justify-content: center;
+        }
+    
+        nav a {
+            text-decoration: none;
+        }
+    
+        #aramaKutusu {
+            padding: 10px;
+            width: 250px;
+            margin-bottom: 20px;
+            font-size: 16px;
+        }
+    
+        /* --- Buradan sonrası --- */
+        .menu-category {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 60px;
+        }
+    
+        .menu-row {
+            display: flex;
+            justify-content: center;
+            gap: 100px;
+            width: 170%;
+            max-width: 1200px; /* İstersen arttır */
+            min-height: 450px;
+        }
+    
+        .menu-item {
+            background-color:rgb(253, 184, 184);
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            width: 45%;
+            padding: 15px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+    
+        .menu-image {
+            width: 450px;
+            height: 250px;
+            object-fit: cover;
+            margin-bottom: 20px;
+        }
+
+        .menu-item p {
+            font-size: 18px;
+            margin: 5px 0;
+        }
+        
+        .menu-item strong {
+            font-size: 20px;
+        }
+
+        .add-to-cart {
+            padding: 6px 12px;
+            background-color: green;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+    </style>
+    
+</head>
+<body>
+
+    <!-- 🛒 SEPET ALANI -->
+    <div class="sepet-container">
+        <a href="{% url 'cart' %}" class="sepet-link">
+            <i class="fas fa-shopping-cart"></i>
+            <span id="sepetSayisi" class="sepet-sayisi">{{ sepet_urun_sayisi|default:"0" }}</span>
+        </a>
+    </div>
+
+    <header>
+        <h1>Restoran Adı</h1>
+        <p>Lezzetli yemekler, hızlı sipariş!</p>
+    </header>
+
+    <nav>
+        <ul>
+            <li><a href="#menu">Menü</a></li>
+            <li><a href="#about">Hakkımızda</a></li>
+            <li><a href="#contact">İletişim</a></li>
+        </ul>
+    </nav>
+
+    <section id="menu">
+        <h2>Menü</h2>
+    
+        <!-- 🔎 ARAMA KUTUSU -->
+        <input type="text" id="aramaKutusu" placeholder="Ürün Ara...">
+    
+        <div class="menu-category" id="menuKategori">
+            <h3>Ürünler</h3>
+    
+            {% for urun in urunler %}
+                {% if forloop.counter0|divisibleby:2 %}
+                <div class="menu-row">
+                {% endif %}
+    
+                <div class="menu-item" data-isim="{{ urun.isim|lower }}">
+                    <img src="{{ urun.resim.url }}" alt="{{ urun.isim }}" class="menu-image">
+                    <div>
+                        <p><strong>{{ urun.isim }}</strong></p>
+                        <p>{{ urun.aciklama }}</p>
+                        <p>Fiyat: {{ urun.fiyat }}₺</p>
+                        <form method="POST" action="{% url 'siparis_ver' %}" class="siparis-form">
+                            {% csrf_token %}
+                            <input type="hidden" name="urun_adi" value="{{ urun.isim }}">
+                            <button type="submit" class="add-to-cart">Sipariş Ver</button>
+                        </form>
+                    </div>
+                </div>
+    
+                {% if forloop.counter|divisibleby:2 or forloop.last %}
+                </div> <!-- menu-row kapat -->
+                {% endif %}
+            {% empty %}
+            <p>Henüz ürün eklenmedi.</p>
+            {% endfor %}
+        </div>
+    
+    </section>
+    
+    <footer>
+        <p>&copy; 2025 Restoran Adı. Tüm hakları saklıdır.</p>
+    </footer>
+
+    <!-- 🛠️ JAVASCRIPT -->
+    <script>
+        // Arama kutusu için
+        const aramaKutusu = document.getElementById('aramaKutusu');
+        const menuItemlar = document.querySelectorAll('.menu-item');
+
+        aramaKutusu.addEventListener('input', function() {
+            const aranan = this.value.toLowerCase();
+            menuItemlar.forEach(item => {
+                const isim = item.getAttribute('data-isim');
+                if (isim.includes(aranan)) {
+                    item.style.display = 'flex';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        });
+
+        // Sepet sayısını artırmak için
+        const sepetSayisi = document.getElementById('sepetSayisi');
+        const siparisFormlar = document.querySelectorAll('.siparis-form');
+
+        siparisFormlar.forEach(form => {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault(); // Formun normal çalışmasını engelle
+                let sayi = parseInt(sepetSayisi.textContent);
+                sayi += 1;
+                sepetSayisi.textContent = sayi;
+
+                // Gerçek sipariş göndermek istiyorsan burayı kaldır
+                // Eğer istersen AJAX ile gerçek sipariş de gönderebiliriz
+            });
+        });
+    </script>
+
+</body>
+</html>
+
+
